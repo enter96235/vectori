@@ -1,0 +1,144 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: diagnostic
+    description: Read-only diagnostic bridge status for the Audi TT 8J
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /diagnostic/status:
+    get:
+      operationId: getDiagnosticStatus
+      tags: [diagnostic]
+      summary: Get diagnostic bridge status
+      description: Reports the live state of the diagnostic bridge without inventing vehicle or adapter data.
+      responses:
+        "200":
+          description: Current bridge and vehicle connection state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticStatus"
+  /diagnostic/interfaces:
+    get:
+      operationId: listDiagnosticInterfaces
+      tags: [diagnostic]
+      summary: List detected diagnostic interfaces
+      description: Lists interfaces detected by the native diagnostic bridge. An empty list means none are available to the running process.
+      responses:
+        "200":
+          description: Detected diagnostic interfaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiagnosticInterface"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    DiagnosticStatus:
+      type: object
+      properties:
+        bridge:
+          type: string
+          enum: [available, unavailable, limited-linux]
+        adapter:
+          type: string
+          enum: [connected, disconnected]
+        vehicle:
+          type: string
+          enum: [connected, disconnected, unknown]
+        profile:
+          type: string
+        message:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: object
+            properties:
+              operation:
+                type: string
+              adapter:
+                type: string
+              protocol:
+                type: string
+              state:
+                type: string
+                enum: [available, pending, blocked]
+              reason:
+                type: string
+              confirmationRequired:
+                type: boolean
+            required:
+              - operation
+              - adapter
+              - protocol
+              - state
+              - reason
+              - confirmationRequired
+      required:
+        - bridge
+        - adapter
+        - vehicle
+        - profile
+        - message
+        - permissions
+    DiagnosticInterface:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [j2534, usb-can, k-line, serial, bluetooth, unknown]
+        connected:
+          type: boolean
+        driver:
+          type: ["string", "null"]
+        firmware:
+          type: ["string", "null"]
+        functionLibrary:
+          type: ["string", "null"]
+        architecture:
+          type: string
+          enum: [x86, x64]
+      required:
+        - id
+        - name
+        - kind
+        - connected
+        - driver
+        - firmware
+        - functionLibrary
+        - architecture
+

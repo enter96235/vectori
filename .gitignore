@@ -1,0 +1,62 @@
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+*.tsbuildinfo
+native/**/bin/
+native/**/obj/
+native/**/publish/
+native/j2534-bridge/publish-x86/*
+native/j2534-bridge/publish/*
+!native/j2534-bridge/publish/
+!native/j2534-bridge/publish/audi-tt-j2534-bridge.exe
+!native/j2534-bridge/publish-x86/
+!native/j2534-bridge/publish-x86/audi-tt-j2534-bridge.exe
+.expo
+.expo-shared
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+# Replit
+.cache/
+.local/
+
+# Local session data
+/.conversation/
+/.logs/

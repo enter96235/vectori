@@ -1,0 +1,58 @@
+{
+  "name": "audi-tt-diagnostic-desktop",
+  "version": "0.7.4",
+  "private": true,
+  "description": "Windows desktop shell for multimarca OBD-II diagnostics",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.vectordiag.auditt8j",
+    "productName": "Vector Diag — Diagnóstico multimarca",
+    "asar": true,
+    "files": [
+      "main.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../../artifacts/audi-tt-diagnostic/dist/public",
+        "to": "web"
+      },
+      {
+        "from": "../../artifacts/api-server/dist",
+        "to": "api"
+      },
+      {
+        "from": "../../native/j2534-bridge/publish",
+        "to": "bridge-x64"
+      },
+      {
+        "from": "../../native/j2534-bridge/publish-x86",
+        "to": "bridge-x86"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
