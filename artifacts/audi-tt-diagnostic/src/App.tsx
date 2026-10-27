@@ -43,6 +43,65 @@ type InterfaceItem = {
   architecture: 'x86' | 'x64';
 };
 
+type VehicleProfile = {
+  id: string;
+  make: string;
+  model: string;
+  year: string;
+  modules: Array<{ address: string; name: string; conditional?: boolean }>;
+};
+
+const audiTt8jModules: VehicleProfile['modules'] = [
+  { address: '01', name: 'Motor' },
+  { address: '02', name: 'Transmisión automática', conditional: true },
+  { address: '03', name: 'ABS / frenos' },
+  { address: '08', name: 'Climatización' },
+  { address: '09', name: 'Electrónica central' },
+  { address: '0F', name: 'Radio digital', conditional: true },
+  { address: '14', name: 'Electrónica de suspensión' },
+  { address: '15', name: 'Airbags' },
+  { address: '16', name: 'Volante' },
+  { address: '17', name: 'Instrumentos' },
+  { address: '19', name: 'Gateway CAN' },
+  { address: '22', name: 'Tracción integral', conditional: true },
+  { address: '25', name: 'Inmovilizador', conditional: true },
+  { address: '37', name: 'Navegación', conditional: true },
+  { address: '42', name: 'Electrónica de puerta del conductor' },
+  { address: '44', name: 'Dirección asistida' },
+  { address: '46', name: 'Confort central' },
+  { address: '47', name: 'Sistema de sonido', conditional: true },
+  { address: '4C', name: 'Control de presión de neumáticos' },
+  { address: '52', name: 'Electrónica de puerta del acompañante' },
+  { address: '55', name: 'Alcance de faros', conditional: true },
+  { address: '56', name: 'Radio' },
+  { address: '76', name: 'Asistencia de estacionamiento', conditional: true },
+  { address: '77', name: 'Teléfono', conditional: true },
+];
+
+const manualVehicleProfiles: Record<string, Omit<VehicleProfile, 'evidence'>> = {
+  'audi-tt-8j-2007': {
+    id: 'audi-tt-8j-2007',
+    make: 'Audi',
+    model: 'TT Mk2 (8J)',
+    year: '2007',
+    modules: audiTt8jModules,
+  },
+  'mercedes-slk-r172-2012': {
+    id: 'mercedes-slk-r172-2012',
+    make: 'Mercedes-Benz',
+    model: 'SLK 200 (R172)',
+    year: '2012',
+    modules: [],
+  },
+  'mercedes-slk-r172-2014': {
+    id: 'mercedes-slk-r172-2014',
+    make: 'Mercedes-Benz',
+    model: 'SLK 200 (R172)',
+    year: '2014',
+    modules: [],
+  },
+};
+
 const navItems: NavItem[] = [
   { label: 'Conexión', detail: 'Adaptador y estado', icon: LayoutDashboard, target: 'connection' },
   { label: 'Vehículo', detail: 'Identificación por VIN', icon: CarFront, target: 'vehicle' },
@@ -176,29 +235,119 @@ const vehicleMakes = [
 function ProfileCard({
   vin,
   diagnosis,
+  profileId,
+  onProfileChange,
 }: {
   vin: string | null;
   diagnosis: string;
+  profileId: string;
+  onProfileChange: (profileId: string) => void;
 }) {
   const vehicle = vin ? decodeVin(vin) : null;
+  const detectedAudiChassis = vehicle?.make === 'Audi' && vin?.slice(6, 8).toUpperCase() === '8J';
+  const autoProfile = detectedAudiChassis
+    ? {
+        id: 'audi-tt-8j-auto',
+        make: 'Audi',
+        model: 'TT Mk2 (8J)',
+        year: vehicle?.year || '2007+',
+        modules: audiTt8jModules,
+      }
+    : null;
+  const selectedProfile = manualVehicleProfiles[profileId];
+  const profile: VehicleProfile | null = selectedProfile ?? autoProfile;
   return (
     <section className="rise-in rounded-lg border border-slate-800 bg-[#0e1a25] p-5 sm:p-6" data-testid="card-vehicle-profile">
       <div className="mb-5 flex items-center gap-2 text-cyan-300"><CarFront className="h-4 w-4" /><span className="mono text-[10px] uppercase tracking-[0.16em]">Identificación del vehículo</span></div>
-      {vehicle ? (
+      <label htmlFor="vehicle-profile" className="mb-2 block text-[10px] uppercase tracking-[0.16em] text-slate-500">Perfil de referencia</label>
+      <select
+        id="vehicle-profile"
+        value={profileId}
+        onChange={(event) => onProfileChange(event.target.value)}
+        className="w-full rounded-md border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400/50"
+      >
+        <option value="">Detectar por VIN</option>
+        <option value="audi-tt-8j-2007">Audi TT Mk2 (8J), 2007</option>
+        <option value="mercedes-slk-r172-2012">Mercedes-Benz SLK 200 (R172), 2012</option>
+        <option value="mercedes-slk-r172-2014">Mercedes-Benz SLK 200 (R172), 2014</option>
+      </select>
+      {profile ? (
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <VehicleField label="Marca" value={profile.make} />
+          <VehicleField label="Modelo" value={profile.model} />
+          <VehicleField label="Año del perfil" value={profile.year} />
+        </div>
+      ) : vehicle ? (
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <VehicleField label="Marca por VIN" value={vehicle.make || 'No identificada'} />
+          <VehicleField label="Modelo" value="Sin decodificador local" />
+          <VehicleField label="Año modelo por VIN" value={vehicle.year || 'No identificado'} />
+        </div>
+      ) : (
+        <p className={`mt-4 rounded border border-dashed border-slate-700 px-4 py-6 text-center text-sm ${diagnosis === 'No se puede conectar' || diagnosis === 'No se puede extraer VIN' ? 'text-red-200' : 'text-slate-400'}`}>{diagnosis}</p>
+      )}
+      {vehicle && (
         <>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <VehicleField label="Marca" value={vehicle.make || 'No identificada'} />
-            <VehicleField label="Modelo" value="Sin decodificador local" />
-            <VehicleField label="Año modelo" value={vehicle.year || 'No identificado'} />
-          </div>
           <div className="mt-4 rounded border border-slate-800 bg-slate-950/25 p-3">
             <p className="mono text-[9px] uppercase tracking-wider text-slate-500">VIN leído del vehículo</p>
             <p className="mono mt-2 break-all text-sm text-slate-100">{vin}</p>
           </div>
-          <p className="mt-3 text-xs leading-relaxed text-slate-500">La marca y el año se decodifican del VIN. El código de modelo depende del fabricante y no tiene una decodificación universal; no se muestra un modelo sin una fuente local validada. El código de año puede repetirse cada 30 años.</p>
+          <p className="mt-3 text-xs leading-relaxed text-slate-500">La marca y el año se decodifican del VIN. El perfil seleccionado manualmente no verifica el motor ni el equipamiento. El código de año puede repetirse cada 30 años.</p>
         </>
+      )}
+    </section>
+  );
+}
+
+function ModuleCoverageCard({ profile }: { profile: VehicleProfile | null }) {
+  return (
+    <section className="mt-4 rounded-lg border border-amber-400/15 bg-[#0e1a25] p-5 sm:p-6" data-testid="card-module-coverage">
+      <div className="mb-3 flex items-center gap-2 text-amber-300">
+        <ShieldCheck className="h-4 w-4" />
+        <span className="mono text-[10px] uppercase tracking-[0.16em]">Cobertura de unidades</span>
+      </div>
+      <p className="text-sm font-bold text-slate-100">Detección de módulos de fabricante no disponible</p>
+      <p className="mt-2 text-xs leading-relaxed text-slate-400">
+        El escaneo actual consulta OBD-II genérico del motor/emisiones. No ha consultado ni detectado ABS,
+        airbags, gateway, radio ni otras unidades. No se envían solicitudes a direcciones CAN desconocidas.
+      </p>
+      {profile?.modules.length ? (
+        <>
+          <p className="mt-4 text-xs font-semibold text-slate-300">
+            Referencia Audi TT 8J: módulos que pueden estar presentes según documentación de aplicación. La
+            lista no representa módulos detectados; los marcados “según equipamiento” son opcionales.
+          </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+            Estos son direcciones lógicas VAG, no identificadores CAN/J2534. No se envían solicitudes a
+            estas direcciones.
+          </p>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {profile.modules.map((module) => (
+              <li key={module.address} className="flex items-start gap-2 rounded border border-slate-800 bg-slate-950/25 px-3 py-2 text-xs text-slate-300">
+                <span className="mono text-cyan-300">{module.address}</span>
+                <span>{module.name}{module.conditional ? ' · según equipamiento' : ''}</span>
+              </li>
+            ))}
+          </ul>
+          <a
+            className="mt-3 inline-block text-xs text-cyan-300 underline decoration-cyan-700 underline-offset-2 hover:text-cyan-200"
+            href="https://www.ross-tech.com/vag-com/cars/applications/ttr8.html"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Fuente: tabla de aplicaciones Ross-Tech para Audi TT 2007–2009
+          </a>
+        </>
+      ) : profile ? (
+        <p className="mt-4 rounded border border-slate-800 bg-slate-950/25 p-3 text-xs leading-relaxed text-slate-400">
+          Perfil {profile.model}, {profile.year}: esta versión no contiene un catálogo de unidades Mercedes
+          verificado para R172. La selección de perfil no inicia ni amplía la comunicación con el vehículo.
+        </p>
       ) : (
-        <p className={`rounded border border-dashed border-slate-700 px-4 py-6 text-center text-sm ${diagnosis === 'No se puede conectar' || diagnosis === 'No se puede extraer VIN' ? 'text-red-200' : 'text-slate-400'}`}>{diagnosis}</p>
+        <p className="mt-4 rounded border border-slate-800 bg-slate-950/25 p-3 text-xs leading-relaxed text-slate-400">
+          Selecciona un perfil de referencia para ver la información documentada. El perfil no cambia los
+          servicios que el adaptador puede consultar.
+        </p>
       )}
     </section>
   );
@@ -367,6 +516,7 @@ function Home() {
   const [active, setActive] = useState('connection');
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedInterfaceId, setSelectedInterfaceId] = useState('');
+  const [vehicleProfileId, setVehicleProfileId] = useState('');
   const [connectionState, setConnectionState] = useState<{ success: boolean; message: string } | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [obdScan, setObdScan] = useState<ObdScanResult | null>(null);
@@ -376,6 +526,19 @@ function Home() {
   const [eventsError, setEventsError] = useState<string | null>(null);
   const interfacesQuery = useListDiagnosticInterfaces({ query: { queryKey: getListDiagnosticInterfacesQueryKey() } });
   const interfaces = Array.isArray(interfacesQuery.data) ? interfacesQuery.data : [];
+  const selectedVehicleProfile = manualVehicleProfiles[vehicleProfileId];
+  const scannedVehicle = obdScan?.vin ? decodeVin(obdScan.vin) : null;
+  const autoVehicleProfile: VehicleProfile | null = scannedVehicle?.make === 'Audi' &&
+    obdScan?.vin?.slice(6, 8).toUpperCase() === '8J'
+    ? {
+        id: 'audi-tt-8j-auto',
+        make: 'Audi',
+        model: 'TT Mk2 (8J)',
+        year: scannedVehicle.year || '2007+',
+        modules: audiTt8jModules,
+      }
+    : null;
+  const effectiveVehicleProfile: VehicleProfile | null = selectedVehicleProfile ?? autoVehicleProfile;
 
   useEffect(() => {
     if (!selectedInterfaceId && interfaces.length > 0) {
@@ -538,13 +701,20 @@ function Home() {
     vehicle: (
       <>
         <div className="mb-5"><h1 className="text-2xl font-extrabold tracking-tight text-slate-100">Vehículo</h1><p className="mt-2 text-sm text-slate-400">Identificación obtenida automáticamente al conectar.</p></div>
-        <ProfileCard vin={obdScan?.vin ?? null} diagnosis={diagnosis} />
+        <ProfileCard
+          vin={obdScan?.vin ?? null}
+          diagnosis={diagnosis}
+          profileId={vehicleProfileId}
+          onProfileChange={setVehicleProfileId}
+        />
+        <ModuleCoverageCard profile={effectiveVehicleProfile} />
       </>
     ),
     scan: (
       <>
         <div className="mb-5"><h1 className="text-2xl font-extrabold tracking-tight text-slate-100">Escanear</h1><p className="mt-2 text-sm text-slate-400">Lectura de Códigos de Error</p></div>
         <FaultMemoryCard scan={obdScan} loading={obdLoading || connecting} onScan={() => void (connectionState?.success ? readObd() : connectAdapter())} />
+        <ModuleCoverageCard profile={effectiveVehicleProfile} />
         {obdMessage && <p className="mt-3 rounded border border-slate-800 bg-slate-950/30 px-3 py-2 text-xs text-slate-400" role="status">{obdMessage}</p>}
       </>
     ),

@@ -1,6 +1,6 @@
 {
   "name": "audi-tt-diagnostic-desktop",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "private": true,
   "description": "Windows desktop shell for multimarca OBD-II diagnostics",
   "main": "main.cjs",
